@@ -1,0 +1,32 @@
+import WebSocket from 'ws'
+import http from 'http'
+
+const wss = new WebSocket.Server({ port: 3001 })
+
+wss.on('connection', ws => {
+  ws.on('message', msg => {
+    console.log('received:', msg)
+    getData().then(s => ws.send(s)) // sはstringのはず…
+  })
+})
+
+function getData() {
+  return new Promise((resolve, reject)=> {
+    const req = http.request('http://localhost:3000/v1/users_in_room', res => {
+      let b = ''
+      res.on('data', chunk => {
+        console.log(typeof chunk)
+        b += chunk // Bufferなのでじゃんじゃんくっつける
+      })
+      res.on('end', () => {
+        console.log(typeof b, b)
+        resolve(b)
+      })
+      res.on('error', err => {
+        console.error(err)
+        reject(err)
+      })
+    })
+    req.end()
+  })
+}
